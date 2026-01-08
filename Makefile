@@ -1,5 +1,5 @@
 CC      := cc
-CFLAGS  := -Wall -Wextra -std=c2x
+CFLAGS  := -Wall -Wextra
 
 TARGET  := calculator
 SOURCES := $(wildcard *.c)

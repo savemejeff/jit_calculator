@@ -3,6 +3,7 @@
 typedef enum {
     // single char tokens
     TOKEN_PLUS, TOKEN_MINUS, TOKEN_STAR, TOKEN_SLASH,
+    TOKEN_LPAREN, TOKEN_RPAREN,
 
     // literals
     TOKEN_INTEGER,

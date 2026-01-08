@@ -55,6 +55,12 @@ static Token advance()
     return current;
 }
 
+static void consume(Token_Type type) 
+{
+    ASSERT(current.type == type && "wrong token");
+    advance();
+}
+
 static void integer()
 {
     int value = strtol(previous.start, NULL, 10);
@@ -79,11 +85,34 @@ static void binary()
     emit_byte(INS_PUSH_RAX);
 }
 
+static void unary() 
+{
+    Token_Type optype = previous.type;
+    Parse_Rule* rule = get_rule(optype);
+    parse_precedence((Precedence)(rule->precedence) + 1);
+
+    emit_byte(INS_POPQ_RAX);
+    switch (optype) {
+        case TOKEN_PLUS:  break;
+        case TOKEN_MINUS: emit_bytes(0xf7, 0xd8);
+        default: break;
+    }
+    emit_byte(INS_PUSH_RAX);
+}
+
+static void group()
+{
+    parse_precedence(PREC_TERM);
+    consume(TOKEN_RPAREN);
+}
+
 Parse_Rule rules[] = {
-    [TOKEN_PLUS]    = {NULL,    binary, PREC_TERM},
-    [TOKEN_MINUS]   = {NULL,    binary, PREC_TERM},
+    [TOKEN_PLUS]    = {unary,   binary, PREC_TERM},
+    [TOKEN_MINUS]   = {unary,   binary, PREC_TERM},
     [TOKEN_STAR]    = {NULL,    binary, PREC_FACTOR},
     [TOKEN_SLASH]   = {NULL,    binary, PREC_FACTOR},
+    [TOKEN_LPAREN]  = {group,   NULL,   PREC_NONE},
+    [TOKEN_RPAREN]  = {NULL,    NULL,   PREC_NONE},
     [TOKEN_INTEGER] = {integer, NULL,   PREC_NONE},
     [TOKEN_EOF]     = {NULL,    NULL,   PREC_NONE},
 };

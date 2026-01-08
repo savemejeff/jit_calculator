@@ -24,7 +24,7 @@ char *read_entire_file(const char *filename)
 void *make_executable(void *ptr, size_t size)
 {
     void *m = mmap(NULL, size, PROT_EXEC | PROT_WRITE | PROT_READ,
-                   MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+                   MAP_PRIVATE | MAP_ANON, -1, 0);
     ASSERT(m != NULL && "mmap failed");
     memcpy(m, ptr, size);
     return m;

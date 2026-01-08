@@ -88,6 +88,8 @@ Token scan_token()
     case '-': return make_token(TOKEN_MINUS);
     case '*': return make_token(TOKEN_STAR);
     case '/': return make_token(TOKEN_SLASH);
+    case '(': return make_token(TOKEN_LPAREN);
+    case ')': return make_token(TOKEN_RPAREN);
     }
     ASSERT("unexpected character");
     return make_token(TOKEN_EOF); // make compiler happy
