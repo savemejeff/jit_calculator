@@ -60,7 +60,13 @@ Token number()
     while (!is_at_end() && isdigit(peek())) {
         advance();
     }
-    return make_token(TOKEN_INTEGER);
+    if (!is_at_end() && peek() == '.') {
+        advance();
+        while (!is_at_end() && isdigit(peek())) {
+            advance();
+        }
+    }
+    return make_token(TOKEN_NUMBER);
 }
 
 void init_scanner(const char *source)
