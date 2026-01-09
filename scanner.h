@@ -6,7 +6,7 @@ typedef enum {
     TOKEN_LPAREN, TOKEN_RPAREN,
 
     // literals
-    TOKEN_INTEGER,
+    TOKEN_NUMBER,
 
     TOKEN_EOF
 } Token_Type;

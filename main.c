@@ -3,7 +3,7 @@
 #include "scanner.h"
 #include "compiler.h"
 
-typedef int (*run)();
+typedef float (*run)();
 
 int main(int argc, const char **argv)
 {
@@ -15,7 +15,7 @@ int main(int argc, const char **argv)
     //     printf("%02x\n", code->items[i]);
     // }
     run run = make_executable(code->items, code->count);
-    printf("%d\n", run());
+    printf("%f\n", run());
 
     free(source);
     return 0;
