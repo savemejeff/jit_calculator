@@ -1,11 +1,6 @@
 #include "compiler.h"
 #include "scanner.h"
 
-#define INS_POPQ_RAX 0x58
-#define INS_POPQ_RDI 0x5f
-#define INS_PUSH_RAX 0x50
-#define INS_RET      0xc3
-
 typedef enum {
   PREC_NONE,
   PREC_TERM,        // + -
@@ -45,23 +40,31 @@ static void emit_dword(int32_t dword)
     emit_byte(0xff & (dword >> 24));
 }
 
+static void ret()
+{
+    emit_byte(0xc3);
+}
+
 // XXX: the `movd` part is same, maybe refactor this
-static void movd_eax_xmm0()
+static void mov_rax_xmm0()
 {
-    emit_bytes(0x66, 0x0f);
-    emit_bytes(0x6e, 0xc0);
+    emit_bytes(0x66, 0x48);
+    emit_bytes(0x0f, 0x6e);
+    emit_byte(0xc0);
 }
 
-static void movd_eax_xmm1()
+static void mov_rax_xmm1()
 {
-    emit_bytes(0x66, 0x0f);
-    emit_bytes(0x6e, 0xc8);
+    emit_bytes(0x66, 0x48);
+    emit_bytes(0x0f, 0x6e);
+    emit_byte(0xc8);
 }
 
-static void movd_xmm0_eax()
+static void mov_xmm0_rax()
 {
-    emit_bytes(0x66, 0x0f);
-    emit_bytes(0x7e, 0xc0);
+    emit_bytes(0x66, 0x48);
+    emit_bytes(0x0f, 0x7e);
+    emit_byte(0xc0);
 }
 
 static void push_eax()
@@ -74,14 +77,14 @@ static void push_eax()
     emit_byte(0x24);
 }
 
-static void pop_eax()
+static void push_rax()
 {
-    // mov (%rsp), %eax
-    emit_bytes(0x8b, 0x04);
-    emit_byte(0x24);
-    // addq $0x4, %rsp
-    emit_bytes(0x48, 0x83);
-    emit_bytes(0xc4, 0x04);
+    emit_byte(0x50);
+}
+
+static void pop_rax()
+{
+    emit_byte(0x58);
 }
 
 Token previous;
@@ -102,10 +105,13 @@ static void consume(Token_Type type)
 
 static void number()
 {
-    float value = strtof(previous.start, NULL);
+    double value = strtod(previous.start, NULL);
     // mov $0xXXXX, %eax
     emit_byte(0xb8);
-    emit_dword(*(int*)(&value));
+    emit_dword(((int*)(&value))[1]);
+    push_eax();
+    emit_byte(0xb8);
+    emit_dword(((int*)(&value))[0]);
     push_eax();
 }
 
@@ -115,19 +121,33 @@ static void binary()
     Parse_Rule* rule = get_rule(optype);
     parse_precedence((Precedence)(rule->precedence + 1));
 
-    pop_eax();
-    movd_eax_xmm1();
-    pop_eax();
-    movd_eax_xmm0();
+    pop_rax();
+    mov_rax_xmm1();
+    pop_rax();
+    mov_rax_xmm0();
     switch (optype) {
-    case TOKEN_PLUS:  emit_bytes(0xf3, 0x0f); emit_bytes(0x58, 0xc1); break;
-    case TOKEN_MINUS: emit_bytes(0xf3, 0x0f); emit_bytes(0x5c, 0xc1); break;
-    case TOKEN_STAR:  emit_bytes(0xf3, 0x0f); emit_bytes(0x59, 0xc1); break;
-    case TOKEN_SLASH: emit_bytes(0xf3, 0x0f); emit_bytes(0x5e, 0xc1); break;
+    case TOKEN_PLUS:  emit_bytes(0xf2, 0x0f); emit_bytes(0x58, 0xc1); break;
+    case TOKEN_MINUS: emit_bytes(0xf2, 0x0f); emit_bytes(0x5c, 0xc1); break;
+    case TOKEN_STAR:  emit_bytes(0xf2, 0x0f); emit_bytes(0x59, 0xc1); break;
+    case TOKEN_SLASH: emit_bytes(0xf2, 0x0f); emit_bytes(0x5e, 0xc1); break;
     default: break;
     }
-    movd_xmm0_eax();
+    mov_xmm0_rax();
+    push_rax();
+}
+
+static void neg() 
+{
+    emit_byte(0xb8);
+    emit_dword(2147483648);
     push_eax();
+    emit_byte(0xb8);
+    emit_dword(0);
+    push_eax();
+    pop_rax();
+    mov_rax_xmm1();
+    emit_bytes(0x66, 0x0f);
+    emit_bytes(0x57, 0xc1);
 }
 
 static void unary() 
@@ -136,13 +156,15 @@ static void unary()
     Parse_Rule* rule = get_rule(optype);
     parse_precedence((Precedence)(rule->precedence) + 1);
 
-    emit_byte(INS_POPQ_RAX);
+    pop_rax();
+    mov_rax_xmm0();
     switch (optype) {
-        case TOKEN_PLUS:  break;
-        case TOKEN_MINUS: emit_bytes(0xf7, 0xd8);
-        default: break;
+    case TOKEN_PLUS:  break;
+    case TOKEN_MINUS: neg(); break;
+    default: break;
     }
-    emit_byte(INS_PUSH_RAX);
+    mov_xmm0_rax();
+    push_rax();
 }
 
 static void group()
@@ -184,8 +206,9 @@ static void parse_precedence(Precedence precedence)
 static void expression()
 {
     parse_precedence(PREC_TERM);
-    pop_eax();
-    emit_byte(INS_RET);
+    pop_rax();
+    mov_rax_xmm0();
+    ret();
 }
 
 Code *compile(const char *source)
