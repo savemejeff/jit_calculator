@@ -10,5 +10,6 @@
 #include <ctype.h>
 #include <limits.h>
 #include <time.h>
+#include <math.h>
 
 #endif // COMMON_H

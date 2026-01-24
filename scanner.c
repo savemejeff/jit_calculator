@@ -96,7 +96,8 @@ Token scan_token()
     case '/': return make_token(TOKEN_SLASH);
     case '(': return make_token(TOKEN_LPAREN);
     case ')': return make_token(TOKEN_RPAREN);
+    case '^': return make_token(TOKEN_CARET);
     }
-    ASSERT("unexpected character");
+    ASSERT(0 && "unexpected character");
     return make_token(TOKEN_EOF); // make compiler happy
 }

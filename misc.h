@@ -19,19 +19,19 @@
 #define DA_INIT_CAPACITY 32
 #endif
 
-#define da_reserve(da, at_least)                                                   \
-    do {                                                                           \
-        if ((at_least) > (da)->capacity) {                                         \
-            if ((da)->capacity == 0) {                                             \
-                (da)->capacity = DA_INIT_CAPACITY;                                 \
-            }                                                                      \
-            while ((at_least) > (da)->capacity) {                                  \
-                (da)->capacity *= 2;                                               \
-            }                                                                      \
-        }                                                                          \
-        (da)->items = realloc((da)->items, sizeof(*(da)->items) * (da)->capacity); \
-        ASSERT((da)->items != NULL && "ran out of memory");                        \
-    } while(0)
+#define da_reserve(da, at_least)                                               \
+do {                                                                           \
+    if ((at_least) > (da)->capacity) {                                         \
+        if ((da)->capacity == 0) {                                             \
+            (da)->capacity = DA_INIT_CAPACITY;                                 \
+        }                                                                      \
+        while ((at_least) > (da)->capacity) {                                  \
+            (da)->capacity *= 2;                                               \
+        }                                                                      \
+    }                                                                          \
+    (da)->items = realloc((da)->items, sizeof(*(da)->items) * (da)->capacity); \
+    ASSERT((da)->items != NULL && "ran out of memory");                        \
+} while(0)
 
 #define da_append(da, new_item)                  \
     do {                                         \
