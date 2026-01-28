@@ -2,16 +2,25 @@ CC      := cc
 CFLAGS  := -Wall -Wextra
 LIBS    := -lm
 
-TARGET  := calculator
+BIN     := bin
+TARGET  := $(BIN)/calculator
 SOURCES := $(wildcard *.c)
 HEADERS := $(wildcard *.h)
-OBJECTS := $(SOURCES:.c=.o)
+OBJECTS := $(addprefix $(BIN)/, $(SOURCES:.c=.o))
 
 $(TARGET): $(OBJECTS)
-	$(CC) -o $@ $^ $(LIBS)
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
-$(OBJECTS): %.o: %.c $(HEADERS)
+$(OBJECTS): $(BIN)/%.o: %.c $(HEADERS) $(BIN)
+	@mkdir -p $(BIN)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(BIN):
+	mkdir -p $(BIN)
+
+test: $(TARGET)
+	(cd tests; ./runtests.sh)
+
 clean:
-	rm -rf $(OBJECTS) $(TARGET)
+	rm -f $(OBJECTS) $(TARGET)

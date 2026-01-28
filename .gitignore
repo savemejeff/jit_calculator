@@ -5,3 +5,7 @@
 !*.h
 !Makefile
 !cal.sh
+!tests/
+!tests/*.test
+!tests/*.expect
+!tests/runtests.sh

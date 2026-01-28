@@ -9,7 +9,7 @@ while IFS= read -r line; do
     printf '%s\n' "$line" > "$tmpfile"
 
     # Run your command on the file
-    ./calculator "$tmpfile"
+    ./bin/calculator "$tmpfile"
 
     # Delete temp file
     rm -f "$tmpfile"
