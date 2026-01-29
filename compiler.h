@@ -2,12 +2,7 @@
 
 #include "common.h"
 #include "misc.h"
-
-typedef struct {
-    uint8_t *items;
-    size_t count;
-    size_t capacity;
-} Code;
+#include "codegen.h"
 
 Code *compile(const char *source);
 

@@ -22,91 +22,52 @@ Code *code;
 static void parse_precedence(Precedence precedence);
 static Parse_Rule *get_rule(Token_Type type);
 
-typedef union {
-  uint64_t u64[1];
-  double   f64[1];
-  uint32_t u32[2];
-  uint8_t  u8[8];
-} Raw;
-
-static void emit_byte(uint8_t byte)
-{
-    da_append(code, byte);
-}
-
-#define emit_bytes(...) do {			\
-  uint8_t bytes[] = { __VA_ARGS__ };		\
-  for (size_t _i = 0; _i < sizeof(bytes); _i++) \
-    emit_byte(bytes[_i]);			\
-} while (0)
-
-static void emit_dword(uint32_t dword)
-{
-  Raw raw = {0};
-  raw.u32[0] = dword;
-  emit_byte(raw.u8[0]);
-  emit_byte(raw.u8[1]);
-  emit_byte(raw.u8[2]);
-  emit_byte(raw.u8[3]);
-}
-
 static void ret()
 {
-    emit_byte(0xc3);
+    emit_bytes(0xc3);
 }
 
 // XXX: the `movd` part is same, maybe refactor this
 static void mov_rax_xmm0()
 {
-    emit_bytes(0x66, 0x48);
-    emit_bytes(0x0f, 0x6e);
-    emit_byte(0xc0);
+    emit_bytes(0x66, 0x48, 0x0f, 0x6e, 0xc0);
 }
 
 static void mov_rax_xmm1()
 {
-    emit_bytes(0x66, 0x48);
-    emit_bytes(0x0f, 0x6e);
-    emit_byte(0xc8);
+    emit_bytes(0x66, 0x48, 0x0f, 0x6e, 0xc8);
 }
 
 static void mov_xmm0_rax()
 {
-    emit_bytes(0x66, 0x48);
-    emit_bytes(0x0f, 0x7e);
-    emit_byte(0xc0);
+    emit_bytes(0x66, 0x48, 0x0f, 0x7e, 0xc0);
 }
 
 static void push_eax()
 {
     // sub $0x4, %rsp
-    emit_bytes(0x48, 0x83);
-    emit_bytes(0xec, 0x04);
     // mov %eax, (%rsp)
-    emit_bytes(0x89, 0x04);
-    emit_byte(0x24);
+    emit_bytes(0x48, 0x83, 0xec, 0x04, 0x89, 0x04, 0x24);
 }
 
 static void push_rax()
 {
-    emit_byte(0x50);
+    emit_bytes(0x50);
 }
 
 static void pop_rax()
 {
-    emit_byte(0x58);
+    emit_bytes(0x58);
 }
 
 static void push_u64(uint64_t u64)
 {
-  Raw raw = {0};
-  raw.u64[0] = u64;
   // mov $0xXXXX, %eax
-  emit_byte(0xb8);
-  emit_dword(raw.u32[1]);
+  emit_bytes(0xb8);
+  emit_dword((u64 >> 32) & 0xffffffff);
   push_eax();
-  emit_byte(0xb8);
-  emit_dword(raw.u32[0]);
+  emit_bytes(0xb8);
+  emit_dword((u64) & 0xffffffff);
   push_eax();
 }
 
@@ -129,9 +90,7 @@ static void consume(Token_Type type)
 static void number()
 {
     double value = strtod(previous.start, NULL);
-    Raw raw = {0};
-    raw.f64[0] = value;
-    push_u64(raw.u64[0]);
+    push_u64(*(uint64_t *)&value);
 }
 
 static void exponent()
@@ -163,17 +122,16 @@ static void binary()
     push_rax();
 }
 
-static void neg() 
+static void neg()
 {
-  Raw raw = {0};
-  raw.f64[0] = -1;
-  push_u64(raw.u64[0]);
-  pop_rax();
-  mov_rax_xmm1();
-  emit_bytes(0xf2, 0x0f, 0x59, 0xc1);
+    double d = -1;
+    push_u64(*(uint64_t *)&d);
+    pop_rax();
+    mov_rax_xmm1();
+    emit_bytes(0xf2, 0x0f, 0x59, 0xc1);
 }
 
-static void unary() 
+static void unary()
 {
     Token_Type optype = previous.type;
     Parse_Rule* rule = get_rule(optype);
