@@ -1,6 +1,11 @@
 CC      := cc
-CFLAGS  := -Wall -Wextra
+CFLAGS  := -Wall -Wextra -g
 LIBS    := -lm
+ARCH    := native
+
+ifeq ($(ARCH), x86_64)
+	CFLAGS += -target x86_64-apple-darwin
+endif
 
 BIN     := bin
 TARGET  := $(BIN)/calculator

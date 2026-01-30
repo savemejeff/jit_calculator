@@ -62,13 +62,9 @@ static void pop_rax()
 
 static void push_u64(uint64_t u64)
 {
-  // mov $0xXXXX, %eax
-  emit_bytes(0xb8);
-  emit_dword((u64 >> 32) & 0xffffffff);
-  push_eax();
-  emit_bytes(0xb8);
-  emit_dword((u64) & 0xffffffff);
-  push_eax();
+    emit_bytes(0x48, 0xb8);
+    emit_qword(u64);
+    push_rax();
 }
 
 Token previous;
