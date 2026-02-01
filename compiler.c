@@ -22,51 +22,6 @@ Code *code;
 static void parse_precedence(Precedence precedence);
 static Parse_Rule *get_rule(Token_Type type);
 
-static void ret()
-{
-    emit_bytes(0xc3);
-}
-
-// XXX: the `movd` part is same, maybe refactor this
-static void mov_rax_xmm0()
-{
-    emit_bytes(0x66, 0x48, 0x0f, 0x6e, 0xc0);
-}
-
-static void mov_rax_xmm1()
-{
-    emit_bytes(0x66, 0x48, 0x0f, 0x6e, 0xc8);
-}
-
-static void mov_xmm0_rax()
-{
-    emit_bytes(0x66, 0x48, 0x0f, 0x7e, 0xc0);
-}
-
-static void push_eax()
-{
-    // sub $0x4, %rsp
-    // mov %eax, (%rsp)
-    emit_bytes(0x48, 0x83, 0xec, 0x04, 0x89, 0x04, 0x24);
-}
-
-static void push_rax()
-{
-    emit_bytes(0x50);
-}
-
-static void pop_rax()
-{
-    emit_bytes(0x58);
-}
-
-static void push_u64(uint64_t u64)
-{
-    emit_bytes(0x48, 0xb8);
-    emit_qword(u64);
-    push_rax();
-}
-
 Token previous;
 Token current;
 
@@ -86,14 +41,8 @@ static void consume(Token_Type type)
 static void number()
 {
     double value = strtod(previous.start, NULL);
-    push_u64(*(uint64_t *)&value);
-}
-
-static void exponent()
-{
-  push_u64((uint64_t)pow);
-  pop_rax();
-  emit_bytes(0xff, 0xd0);
+    immediate(*(uint64_t *)&value);
+    push();
 }
 
 static void binary()
@@ -102,29 +51,17 @@ static void binary()
     Parse_Rule* rule = get_rule(optype);
     parse_precedence((Precedence)(rule->precedence + 1));
 
-    pop_rax();
-    mov_rax_xmm1();
-    pop_rax();
-    mov_rax_xmm0();
+    pop2();
+    pop();
     switch (optype) {
-    case TOKEN_PLUS:  emit_bytes(0xf2, 0x0f, 0x58, 0xc1); break;
-    case TOKEN_MINUS: emit_bytes(0xf2, 0x0f, 0x5c, 0xc1); break;
-    case TOKEN_STAR:  emit_bytes(0xf2, 0x0f, 0x59, 0xc1); break;
-    case TOKEN_SLASH: emit_bytes(0xf2, 0x0f, 0x5e, 0xc1); break;
+    case TOKEN_PLUS:  add(); break;
+    case TOKEN_MINUS: sub(); break;
+    case TOKEN_STAR:  mul(); break;
+    case TOKEN_SLASH: idiv(); break;
     case TOKEN_CARET: exponent(); break;
     default: break;
     }
-    mov_xmm0_rax();
-    push_rax();
-}
-
-static void neg()
-{
-    double d = -1;
-    push_u64(*(uint64_t *)&d);
-    pop_rax();
-    mov_rax_xmm1();
-    emit_bytes(0xf2, 0x0f, 0x59, 0xc1);
+    push();
 }
 
 static void unary()
@@ -133,15 +70,13 @@ static void unary()
     Parse_Rule* rule = get_rule(optype);
     parse_precedence((Precedence)(rule->precedence) + 1);
 
-    pop_rax();
-    mov_rax_xmm0();
+    pop();
     switch (optype) {
     case TOKEN_PLUS:  break;
     case TOKEN_MINUS: neg(); break;
     default: break;
     }
-    mov_xmm0_rax();
-    push_rax();
+    push();
 }
 
 static void group()
@@ -184,8 +119,6 @@ static void parse_precedence(Precedence precedence)
 static void expression()
 {
     parse_precedence(PREC_TERM);
-    pop_rax();
-    mov_rax_xmm0();
     ret();
 }
 

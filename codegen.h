@@ -26,4 +26,16 @@ extern Code *code;
     }                                        \
 } while (0)
 
+void ret();
+void pop();
+void pop2();
+void push();
+void neg();
+void add();
+void sub();
+void mul();
+void idiv();
+void exponent();
+void immediate(uint64_t imm);
+
 #endif // CODEGEN_H

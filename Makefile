@@ -9,8 +9,9 @@ endif
 
 BIN     := bin
 TARGET  := $(BIN)/calculator
-SOURCES := $(wildcard *.c)
-HEADERS := $(wildcard *.h)
+SOURCES := compiler.c main.c misc.c scanner.c
+SOURCES += gen_x64.c
+HEADERS := codegen.h common.h compiler.h misc.h scanner.h
 OBJECTS := $(addprefix $(BIN)/, $(SOURCES:.c=.o))
 
 $(TARGET): $(OBJECTS)
