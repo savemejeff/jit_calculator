@@ -21,11 +21,25 @@ char *read_entire_file(const char *filename)
     return buffer;
 }
 
+#ifdef __linux__
 void *make_executable(void *ptr, size_t size)
 {
     void *m = mmap(NULL, size, PROT_EXEC | PROT_WRITE | PROT_READ,
-                   MAP_PRIVATE | MAP_ANON, -1, 0);
+    MAP_PRIVATE | MAP_ANON, -1, 0);
     ASSERT(m != NULL && "mmap failed");
     memcpy(m, ptr, size);
     return m;
 }
+#elif __APPLE__
+void *make_executable(void *ptr, size_t size)
+{
+    void *m = mmap(NULL, size, PROT_WRITE | PROT_READ,
+    MAP_PRIVATE | MAP_ANON | MAP_JIT, -1, 0);
+    ASSERT(m != NULL && "mmap failed");
+    pthread_jit_write_protect_np(0);
+    memcpy(m, ptr, size);
+    pthread_jit_write_protect_np(1);
+    mprotect(m, size, PROT_READ | PROT_EXEC);
+    return m;
+}
+#endif

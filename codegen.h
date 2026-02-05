@@ -19,8 +19,15 @@ extern Code *code;
         emit_byte(bytes[_i]);                     \
 } while (0)
 
+#define emit_dword(x) do {                   \
+    uint32_t _x = x;                         \
+    for (int _i = 0; _i < 4; _i++) {         \
+        emit_byte((_x >> (_i * 8)) & 0xff);  \
+    }                                        \
+} while (0)
+
 #define emit_qword(x) do {                   \
-    uint64_t _x = x;                          \
+    uint64_t _x = x;                         \
     for (int _i = 0; _i < 8; _i++) {         \
         emit_byte((_x >> (_i * 8)) & 0xff);  \
     }                                        \
@@ -37,5 +44,7 @@ void mul();
 void idiv();
 void exponent();
 void immediate(uint64_t imm);
+void preamble();
+void postamble();
 
 #endif // CODEGEN_H

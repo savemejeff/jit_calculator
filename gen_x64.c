@@ -76,3 +76,11 @@ void immediate(uint64_t imm)
     // movq %rax, %xmm0
     emit_bytes(0x66, 0x48, 0x0f, 0x6e, 0xc0);
 }
+
+void preamble()
+{
+}
+
+void postamble()
+{
+}

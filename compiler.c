@@ -118,7 +118,9 @@ static void parse_precedence(Precedence precedence)
 
 static void expression()
 {
+    preamble();
     parse_precedence(PREC_TERM);
+    postamble();
     ret();
 }
 
