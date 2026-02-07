@@ -20,27 +20,28 @@
 void ret()
 {
     pop();
-    emit_dword(0x913fc3ff);
+    // ldp x29, x30, [sp], #0x1f0
+    emit_dword(0xa8df7bfd);
     // ret
     emit_dword(0xd65f03c0);
 }
 
-int stack_top = 8;
+int stack_top = 0x10;
 void pop()
 {
     stack_top -= 8;
-    emit_dword(LDR(0, SP, stack_top));
+    emit_dword(LDR(0, 29, stack_top));
 }
 
 void pop2()
 {
     stack_top -= 8;
-    emit_dword(LDR(1, SP, stack_top));
+    emit_dword(LDR(1, 29, stack_top));
 }
 
 void push()
 {
-    emit_dword(STR(0, SP, stack_top));
+    emit_dword(STR(0, 29, stack_top));
     stack_top += 8;
 }
 
@@ -76,12 +77,12 @@ void idiv()
 
 void exponent()
 {
-    // uint64_t imm = (uint64_t)pow;
-    // emit_dword(MOV(0, (imm & 0xffff), 0));
-    // emit_dword(MOVK(0, ((imm >> 16) & 0xffff), 16));
-    // emit_dword(MOVK(0, ((imm >> 32) & 0xffff), 32));
-    // emit_dword(MOVK(0, ((imm >> 48) & 0xffff), 48));
-    // emit_dword(0xd63f0000);
+    uint64_t imm = (uint64_t)pow;
+    emit_dword(MOV(0, (imm & 0xffff), 0));
+    emit_dword(MOVK(0, ((imm >> 16) & 0xffff), 16));
+    emit_dword(MOVK(0, ((imm >> 32) & 0xffff), 32));
+    emit_dword(MOVK(0, ((imm >> 48) & 0xffff), 48));
+    emit_dword(0xd63f0000);
 }
 
 void immediate(uint64_t imm)
@@ -96,8 +97,8 @@ void immediate(uint64_t imm)
 // XXX: stack has a fixed capacity now
 void preamble()
 {
-    // sub sp, #4080
-    emit_dword(0xd13fc3ff);
+    // stp x29, x30, [sp, #-0x1f0]!
+    emit_dword(0xa9a17bfd);
 }
 
 void postamble()
