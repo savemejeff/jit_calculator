@@ -1,0 +1,15 @@
+This is a toy cli calculator I wrote for learning JIT
+compilation. It's written in c, but instead of calculating the result
+in c, it compiles the input to machine codes in memory, and then calls
+the machine codes.
+
+References:
+
+1. The parser part codes are copied from Bob Nystrom's book - Crafting
+Interpreters, it's a wonderful book for learning
+compilers. (https://github.com/munificent/craftinginterpreters)
+
+2. I learnt the essence about JIT compilation from Tsoding's
+vedio. I also learnt that writing assembly/machine code is eassy - you
+just write code in c and feed the c code to
+compiler. (https://www.youtube.com/watch?v=mbFY3Rwv7XM&t=9536s)
