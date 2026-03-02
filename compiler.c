@@ -9,12 +9,18 @@ typedef enum {
   PREC_PRIMARY
 } Precedence;
 
+typedef enum {
+    ASSOC_LEFT,
+    ASSOC_RIGHT
+} Associativity;
+
 typedef void (*parse_fn)();
 
 typedef struct {
     parse_fn prefix;
     parse_fn infix;
     Precedence precedence;
+    Associativity associativity;
 } Parse_Rule;
 
 Code *code;
@@ -86,15 +92,15 @@ static void group()
 }
 
 Parse_Rule rules[] = {
-    [TOKEN_PLUS]    = {unary,   binary, PREC_TERM},
-    [TOKEN_MINUS]   = {unary,   binary, PREC_TERM},
-    [TOKEN_STAR]    = {NULL,    binary, PREC_FACTOR},
-    [TOKEN_SLASH]   = {NULL,    binary, PREC_FACTOR},
-    [TOKEN_LPAREN]  = {group,   NULL,   PREC_NONE},
-    [TOKEN_RPAREN]  = {NULL,    NULL,   PREC_NONE},
-    [TOKEN_CARET]   = {NULL,    binary, PREC_EXPONENT},
-    [TOKEN_NUMBER]  = {number,  NULL,   PREC_NONE},
-    [TOKEN_EOF]     = {NULL,    NULL,   PREC_NONE},
+    [TOKEN_PLUS]   = {unary,  binary, PREC_TERM,     ASSOC_LEFT},
+    [TOKEN_MINUS]  = {unary,  binary, PREC_TERM,     ASSOC_LEFT},
+    [TOKEN_STAR]   = {NULL,   binary, PREC_FACTOR,   ASSOC_LEFT},
+    [TOKEN_SLASH]  = {NULL,   binary, PREC_FACTOR,   ASSOC_LEFT},
+    [TOKEN_LPAREN] = {group,  NULL,   PREC_NONE,     ASSOC_LEFT},
+    [TOKEN_RPAREN] = {NULL,   NULL,   PREC_NONE,     ASSOC_LEFT},
+    [TOKEN_CARET]  = {NULL,   binary, PREC_EXPONENT, ASSOC_RIGHT},
+    [TOKEN_NUMBER] = {number, NULL,   PREC_NONE,     ASSOC_LEFT},
+    [TOKEN_EOF]    = {NULL,   NULL,   PREC_NONE,     ASSOC_LEFT},
 };
 
 static Parse_Rule *get_rule(Token_Type type)
@@ -109,10 +115,15 @@ static void parse_precedence(Precedence precedence)
     ASSERT(prefix_rule != NULL && "Expect expression");
 
     prefix_rule();
-    while (precedence <= get_rule(current.type)->precedence) {
+
+    Parse_Rule *rule = get_rule(current.type);
+    while (precedence <= rule->precedence ||
+    (precedence == rule->precedence + 1 &&
+    rule->associativity == ASSOC_RIGHT)) {
         advance();
         parse_fn infix_rule = get_rule(previous.type)->infix;
         infix_rule();
+        rule = get_rule(current.type);
     }
 }
 

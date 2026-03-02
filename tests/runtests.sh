@@ -1,20 +1,13 @@
 #!/usr/bin/env bash
 
-cp -r ./../bin ./bin/
-
 for case in *.test; do
-        touch "temp"
-        while read -r line; do
-                printf "$line\n" | ./../bin/calculator >> "temp"
-        done < "$case"
-        cmp -s "temp" "${case%.*}.expect"
+        ./../bin/calculator < "$case" > "${case%.*}.actual"
+        cmp -s "${case%.*}.actual" "${case%.*}.expect"
         if [ "$?" -eq "1" ]; then
                 echo "${case}: fail"
-                diff -u1 "temp" "${case%.*}.expect"
+                diff -u1 "${case%.*}.actual" "${case%.*}.expect"
         else
                 echo "${case}: pass"
         fi
-        rm "temp"
+        rm "${case%.*}.actual"
 done
-
-rm -r ./bin

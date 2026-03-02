@@ -99,6 +99,7 @@ void preamble()
 {
     // stp x29, x30, [sp, #-0x1f0]!
     emit_dword(0xa9a17bfd);
+    // mov x29, sp
     emit_dword(0x910003fd);
 }
 
